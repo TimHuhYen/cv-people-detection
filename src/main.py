@@ -16,6 +16,7 @@ def main():
             
         detections = detector.detect(frame) # "see" and draw bbox
         fps = fps_counter.update() # update fps once per frame
+        person_count = len(detections)
 
         for (x1, y1, x2, y2, score) in detections:
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
@@ -26,6 +27,15 @@ def main():
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.5,
                 (0, 255, 0),
+                2
+            )
+            cv2.putText(
+                frame,
+                f"People: {person_count}",
+                (10, 70),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (255, 0, 0),
                 2
             )
 
