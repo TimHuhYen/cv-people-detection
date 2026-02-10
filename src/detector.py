@@ -8,7 +8,13 @@ class PersonDetector:
         self.conf = conf
 
     def detect (self, frame):
-        results = self.model(frame, conf=self.conf, verbose=False)
+        results = self.model(
+            frame,
+            conf=self.conf,
+            imgsz=416, # lowered to increase fps
+            verbose=False
+        )
+
         detections = []
 
         for r in results:

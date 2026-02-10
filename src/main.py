@@ -51,7 +51,14 @@ def main():
             x2 = int(x2 / SCALE)
             y2 = int(y2 / SCALE)
 
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.rectangle(
+                frame,
+                (x1, y1),
+                (x2, y2),
+                (0, 255, 0),
+                2
+            )
+            
             cv2.putText(
                 frame,
                 f"Person {score:.2f}",
@@ -61,6 +68,7 @@ def main():
                 (0, 255, 0),
                 2
             )
+
             cv2.putText(
                 frame,
                 f"People: {person_count}",
