@@ -11,7 +11,8 @@ class PersonDetector:
         results = self.model(
             frame,
             conf=self.conf,
-            imgsz=416, # lowered to increase fps
+            iou = 0.5,
+            imgsz = 416, # lowered to increase fps
             verbose=False
         )
 

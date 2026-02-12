@@ -2,7 +2,8 @@ import cv2
 from camera import run_camera
 from detector import PersonDetector
 from utils.fps import FPSCounter
-
+from tracking.centroid_tracker import CentroidTracker
+from utils.draw_overlay import draw
 
 """
     Captures each frame, applies YOLOv8n, COCO detects, infer position [0]- people
@@ -24,9 +25,12 @@ from utils.fps import FPSCounter
 """
 def main():
     SCALE = 0.5
+    DETECTION_INTERVAL = 2
+    frame_id = 0
     cap = cv2.VideoCapture(0)
     detector = PersonDetector()
     fps_counter = FPSCounter() # new fpsCounter
+    tracker = CentroidTracker(max_distance=60)
 
     while True:
         # capture and check if true
@@ -34,62 +38,32 @@ def main():
         if not ret:
             break
         
-        h, w = frame.shape[:2]
+        h, w = frame.shape[:2] # grab h and w from [h, w, rg]
+        
         SCALED_frame = cv2.resize(
             frame, 
             (int(w * SCALE), int(h * SCALE))
         )
 
-        detections = detector.detect(SCALED_frame) # "infer" and draw bbox
-        fps = fps_counter.update() # update fps once per frame
-        person_count = len(detections)
+        # frame id is inc to 1 but detections infer on even inter
+        # therefore detect prev, then infer
+        if frame_id % DETECTION_INTERVAL == 0:
+            # moved detections to every oter frame
+            # "infer" and draw bbox
+            detections = detector.detect(SCALED_frame)
 
-        for (x1, y1, x2, y2, score) in detections:
-
-            x1 = int(x1 / SCALE)
-            y1 = int(y1 / SCALE)
-            x2 = int(x2 / SCALE)
-            y2 = int(y2 / SCALE)
-
-            cv2.rectangle(
-                frame,
-                (x1, y1),
-                (x2, y2),
-                (0, 255, 0),
-                2
-            )
-            
-            cv2.putText(
-                frame,
-                f"Person {score:.2f}",
-                (x1, y1 - 10),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (0, 255, 0),
-                2
-            )
-
-            cv2.putText(
-                frame,
-                f"People: {person_count}",
-                (10, 70),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (255, 0, 0),
-                2
-            )
-
-        # draw fps
-        cv2.putText( 
-                frame, 
-                f"FPS: {fps:.1f}",
-                (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (0,255,0),
-                2
-            )
+            """
+            tracker.update(detections)
+            else:
+                tracker.predict()
+            """
         
+        frame_id += 1
+        person_count = len(detections)
+        fps = fps_counter.update() # update fps once per frame
+
+        draw(frame, detections, person_count, fps, SCALE)
+
         cv2.imshow("People Detection", frame)
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
