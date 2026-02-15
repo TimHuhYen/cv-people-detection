@@ -30,7 +30,7 @@ def main():
     cap = cv2.VideoCapture(0)
     detector = PersonDetector()
     fps_counter = FPSCounter() # new fpsCounter
-    tracker = CentroidTracker(max_distance=60)
+    tracker = CentroidTracker(max_distance=50)
 
     while True:
         # capture and check if true
@@ -45,24 +45,17 @@ def main():
             (int(w * SCALE), int(h * SCALE))
         )
 
-        # frame id is inc to 1 but detections infer on even inter
-        # therefore detect prev, then infer
         if frame_id % DETECTION_INTERVAL == 0:
-            # moved detections to every oter frame
-            # "infer" and draw bbox
             detections = detector.detect(SCALED_frame)
 
-            """
-            tracker.update(detections)
-            else:
-                tracker.predict()
-            """
-        
         frame_id += 1
-        person_count = len(detections)
-        fps = fps_counter.update() # update fps once per frame
 
-        draw(frame, detections, person_count, fps, SCALE)
+        tracker_objects = tracker.update(detections)
+        person_count = len(detections)
+        fps = fps_counter.update()
+        
+        # draw bbox's, fps, person count, and SCALE image
+        draw(frame, tracker_objects, person_count, fps, SCALE)
 
         cv2.imshow("People Detection", frame)
 

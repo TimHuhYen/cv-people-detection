@@ -21,40 +21,42 @@ class CentroidTracker:
     
     def update(self, detections):
         new_objects = {}
+        used_ids = set()
 
         # compute centroids for new detections
-        centroids = []
+        detection_data = []
         for (x1, y1, x2, y2, _) in detections:
             cx = int((x1 + x2) / 2)
             cy = int((y1 + y2) / 2)
-            centroids.append((cx, cy))
+            detection_data.append({
+                "centroid": (cx, cy),
+                "bbox": (x1, y1, x2, y2)
+            })
 
-        used_ids = set()
-
-        # try to match old centroids to new centroids
-        for cx, cy in centroids:
+        for det in detection_data:
+            cx, cy = det["centroid"]
             best_id = None
             best_dist = self.max_distance
 
-            # find best match
-            for obj_id, (ox, oy) in self.objects.items():
+            # try to match old centroids to new centroids
+            for obj_id, obj in self.objects.items():
                 if obj_id in used_ids:
                     continue
                 
+                ox, oy = obj["centroid"]
                 d = self._distance((cx, cy), (ox, oy))
-                if d < best_dist:
+
+                if d < best_dist: # find next centroid position
                     best_dist = d
                     best_id = obj_id
-
             # either assign or create new best_id to fit
             if best_id is not None:
-                new_objects[best_id] = (cx, cy)
+                new_objects[best_id] = det
                 used_ids.add(best_id)
             else:
-                new_objects[self.next_id] = (cx, cy)
+                new_objects[self.next_id] = det
                 self.next_id += 1
 
-        # replace old objects
         self.objects = new_objects
-        return self.objects
-                
+
+        return {obj_id: obj["bbox"] for obj_id, obj in self.objects.items()}
